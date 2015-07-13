@@ -3,3 +3,6 @@
 
 #### API Server 사용법
 - 계속 써가야 .. 
+
+#### 사용예시
+올챙이 이벤트를 참고하세요.( https://tadpoledbhub.atlassian.net/wiki/pages/viewpage.action?pageId=18743302 )
