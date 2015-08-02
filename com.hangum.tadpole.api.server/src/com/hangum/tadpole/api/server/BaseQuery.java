@@ -83,10 +83,17 @@ public class BaseQuery {
 			try {		
 				String strResult =  requestQuery(req.getRemoteAddr(), strServiceID, strUriQuery, strResultType);
 				
-				return Response.status(200)
-						.entity(strResult)
-						.header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN + "; charset=UTF-8")
-						.build();
+				if(QueryUtils.RESULT_TYPE.HTML_TABLE.name().equalsIgnoreCase(strResultType)) {
+					return Response.status(200)
+							.entity(strResult)
+							.header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML + "; charset=UTF-8")
+							.build();
+				} else {
+					return Response.status(200)
+							.entity(strResult)
+							.header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN + "; charset=UTF-8")
+							.build();
+				}
 			} catch (Exception e) {
 				logger.error("service call exception : service id : " + strServiceID, e);
 				return Response.status(400).entity("Service is error. " + e.getMessage()).build();
@@ -186,9 +193,12 @@ public class BaseQuery {
 				strResult = JSONUtil.getPretty(jsonArry.toString());
 			} else if(QueryUtils.RESULT_TYPE.CSV.name().equalsIgnoreCase(strResultType)) {
 				strResult = QueryUtils.selectToCSV(userDB, strSQL, listParam, true, "\t");
-			} else {
+			} else if(QueryUtils.RESULT_TYPE.XML.name().equalsIgnoreCase(strResultType)) {
 				strResult = QueryUtils.selectToXML(userDB, strSQL, listParam);
+			} else {
+				strResult = QueryUtils.selectToHTML_TABLE(userDB, strSQL, listParam);
 			}
+			
 		} else {
 			strResult = QueryUtils.executeDML(userDB, strSQL, listParam, strResultType);
 		}
