@@ -42,12 +42,15 @@ import com.hangum.tadpole.engine.query.sql.TadpoleSystem_ExecutedSQL;
 import com.hangum.tadpole.engine.query.sql.TadpoleSystem_UserDBQuery;
 import com.hangum.tadpole.engine.query.sql.TadpoleSystem_UserDBResource;
 import com.hangum.tadpole.engine.sql.util.QueryUtils;
+import com.hangum.tadpole.engine.sql.util.SQLNamedParameterUtil;
 import com.hangum.tadpole.engine.sql.util.SQLUtil;
 
 /**
  * Tadpole API Server BASE
  * 
  * example url : http://localhost:8080/com.hangum.tadpole.api.server/rest/base?serviceID=ac464340-704b-4123-9f95-b2c285094250&1=2&resultType=JSON
+ * 
+ * http://127.0.0.1:8080/com.hangum.tadpole.api.server/rest/base?serviceID=7dc6f36b-7316-43e1-8c53-a7e6b6e7b1c1&type_code=test2&type_name=test%20sever&
  * 
  * @author hangum
  *
@@ -96,7 +99,7 @@ public class BaseQuery {
 				}
 			} catch (Exception e) {
 				logger.error("service call exception : service id : " + strServiceID, e);
-				return Response.status(400).entity("Service is error. " + e.getMessage()).build();
+				return Response.status(400).entity("Service is error.").build();
 			}
 		}
 	}
@@ -125,10 +128,26 @@ public class BaseQuery {
 				
 				// find db
 				userDB = TadpoleSystem_UserDBQuery.getUserDBInstance(userDBResourceDao.getDb_seq());
-				List<Object> listParam = makeListParameter(strUriQuery);
+				//
+				SQLNamedParameterUtil oracleNamedParamUtil = SQLNamedParameterUtil.getInstance();
+				String strJavaSQL = oracleNamedParamUtil.parse(strSQL);
 				
-				String strResult = getSelect(strResultType, userDB, strSQL, listParam);
-				if(logger.isDebugEnabled()) logger.debug("\t===> result is " + strResult);
+				String strResult = "";
+				Map<Integer, String> mapIndex = oracleNamedParamUtil.getMapIndexToName();
+				if(!mapIndex.isEmpty()) {
+					List<Object> listParam = makeOracleListParameter(mapIndex, strUriQuery);
+					
+					strResult = getSelect(strResultType, userDB, strJavaSQL, listParam);
+				} else {
+					List<Object> listParam = makeJavaListParameter(strUriQuery);
+					
+					strResult = getSelect(strResultType, userDB, strSQL, listParam);
+				}
+//				
+//				List<Object> listParam = makeListParameter(strUriQuery);
+//				
+//				String strResult = getSelect(strResultType, userDB, strSQL, listParam);
+//				if(logger.isDebugEnabled()) logger.debug("\t===> result is " + strResult);
 				
 				// save called history
 				saveHistoryData(strRemoteAddrr, userDB, timstampStart, strServiceID, strUriQuery, PublicTadpoleDefine.SUCCESS_FAIL.S.name(), "");
@@ -207,18 +226,53 @@ public class BaseQuery {
 	}
 	
 	/**
+	 * make oracle type sql parameter
+	 * 
+	 * @param mapIndex
+	 * @param strArgument
+	 * @return
+	 */
+	private List<Object> makeOracleListParameter(Map<Integer, String> mapIndex, String strArgument) throws Exception {
+		List<Object> listParam = new ArrayList<Object>();
+		
+		if(logger.isDebugEnabled()) logger.debug("original URL is ===> " + strArgument);
+		Map<String, String> params = new HashMap<String, String>();
+		for (String param : StringUtils.split(strArgument, "&")) {
+			String pair[] = StringUtils.split(param, "=");
+			String key = URLDecoder.decode(pair[0], "UTF-8");
+			String value = "";
+			if (pair.length > 1) {
+				try {
+					value = URLDecoder.decode(pair[1], "UTF-8");
+				} catch(Exception e) {
+					value = pair[1];
+				}
+			}
+
+			params.put(key, value);
+		}
+		
+		for(int i=1; i<=mapIndex.size(); i++ ) {
+			String strKey = mapIndex.get(i);
+			listParam.add( params.get(strKey) );
+		}
+		return listParam;
+	}
+
+	
+	/**
 	 * make parameter list
 	 * 
-	 * @param strURLQuery
+	 * @param strArgument 
 	 * @return
 	 * @throws Exception
 	 */
-	private List<Object> makeListParameter(String strURLQuery) throws Exception {
+	private List<Object> makeJavaListParameter(String strArgument) throws Exception {
 		List<Object> listParam = new ArrayList<Object>();
-
-		if(logger.isDebugEnabled()) logger.debug("original URL is ===> " + strURLQuery);
+		
+		if(logger.isDebugEnabled()) logger.debug("original URL is ===> " + strArgument);
 		Map<String, String> params = new HashMap<String, String>();
-		for (String param : StringUtils.split(strURLQuery, "&")) {
+		for (String param : StringUtils.split(strArgument, "&")) {
 			String pair[] = StringUtils.split(param, "=");
 			String key = URLDecoder.decode(pair[0], "UTF-8");
 			String value = "";
