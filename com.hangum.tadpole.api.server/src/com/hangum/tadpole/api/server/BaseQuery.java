@@ -105,11 +105,8 @@ public class BaseQuery {
 		}
 			
 		try {		
-			// request query
-			String strResult = requestQuery(apiServiceDto);
+			// return to result
 			String strMediaType = MediaType.TEXT_PLAIN;
-			
-			// return to result 
 			if(QueryUtils.RESULT_TYPE.HTML_TABLE.name().equalsIgnoreCase(apiServiceDto.getUserReturnType())) {
 				strMediaType = MediaType.TEXT_HTML;
 			} else if(QueryUtils.RESULT_TYPE.XML.name().equalsIgnoreCase(apiServiceDto.getUserReturnType())) {
@@ -117,7 +114,7 @@ public class BaseQuery {
 			}
 			
 			return Response.status(200)
-					.entity(strResult)
+					.entity(requestQuery(apiServiceDto))
 					.header(HttpHeaders.CONTENT_TYPE, strMediaType + "; charset=UTF-8")
 					.build();
 		} catch (Exception e) {
@@ -141,25 +138,35 @@ public class BaseQuery {
 			if(userDBResourceDao == null) {
 				throw new Exception("Not found your request url. Check your Request URL.");
 			} else {
+				String strReturnResult = "";
+				
 				// setting dto to service key
 				apiServiceDto.setApiServiceKey(userDBResourceDao.getRestapi_key());
-				
-				// find sql
-				String strSQL = TadpoleSystem_UserDBResource.getResourceData(userDBResourceDao);
-				if(logger.isDebugEnabled()) logger.debug("===> resource info: " + userDBResourceDao.getName() + ", " + strSQL);
 				
 				// find db
 				userDB = TadpoleSystem_UserDBQuery.getUserDBInstance(userDBResourceDao.getDb_seq());
 
-				// execute sql
-				long sTimeM = System.currentTimeMillis();
-				String strResult = executeSQL(strSQL, apiServiceDto, userDB);
-				if(logger.isDebugEnabled()) logger.debug("Execute time is " + (System.currentTimeMillis() - sTimeM));
-
+				// find sql
+				String strSQLs = TadpoleSystem_UserDBResource.getResourceData(userDBResourceDao);
+				for (String strSQL : strSQLs.split(PublicTadpoleDefine.SQL_DELIMITER)) {
+					// execute sql
+					long sTimeM = System.currentTimeMillis();
+					if(QueryUtils.RESULT_TYPE.JSON.name().equalsIgnoreCase(apiServiceDto.getUserReturnType())) {
+						strReturnResult += executeSQL(SQLUtil.sqlExecutable(strSQL), apiServiceDto, userDB) + ",";
+					} else {
+						strReturnResult += executeSQL(SQLUtil.sqlExecutable(strSQL), apiServiceDto, userDB);
+					}
+					if(logger.isDebugEnabled()) logger.debug("Execute time is " + (System.currentTimeMillis() - sTimeM));
+				}
+				
+				if(QueryUtils.RESULT_TYPE.JSON.name().equalsIgnoreCase(apiServiceDto.getUserReturnType())) {
+					strReturnResult = "[" + StringUtils.removeEnd(strReturnResult, ",") + "]"; 
+				}
+				
 				// save called history
 				saveHistoryData(userDB, timstampStart, apiServiceDto, PublicTadpoleDefine.SUCCESS_FAIL.S.name(), "");
 				
-				return strResult;
+				return strReturnResult;
 			}
 			
 		} catch (Exception e) {
