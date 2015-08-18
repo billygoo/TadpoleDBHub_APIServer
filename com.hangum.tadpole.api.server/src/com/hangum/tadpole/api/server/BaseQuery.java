@@ -34,6 +34,8 @@ import org.apache.log4j.Logger;
 
 import com.google.gson.JsonArray;
 import com.hangum.tadpold.commons.libs.core.define.PublicTadpoleDefine;
+import com.hangum.tadpole.api.server.dao.APIServiceDTO;
+import com.hangum.tadpole.api.server.internal.manager.UserCredentialManager;
 import com.hangum.tadpole.commons.dialogs.message.dao.SQLHistoryDAO;
 import com.hangum.tadpole.commons.util.JSONUtil;
 import com.hangum.tadpole.engine.query.dao.system.UserDBDAO;
@@ -48,14 +50,17 @@ import com.hangum.tadpole.engine.sql.util.SQLUtil;
 /**
  * Tadpole API Server BASE
  * 
- * example url : http://localhost:8080/com.hangum.tadpole.api.server/rest/base?serviceID=ac464340-704b-4123-9f95-b2c285094250&1=2&resultType=JSON
+ * <PRE>
+ * chrome-extension://hgmloofddffdnphfgcellkdfbfbjeloo/RestClient.html#RequestPlace:default
  * 
- * http://127.0.0.1:8080/com.hangum.tadpole.api.server/rest/base?serviceID=7dc6f36b-7316-43e1-8c53-a7e6b6e7b1c1&type_code=test2&type_name=test%20sever&
+ * example url : 
+ * 		http://localhost:8080/com.hangum.tadpole.api.server/rest/base/dblist/mysql?user_seq=1&resultType=JSON
+ * </PRE>
  * 
  * @author hangum
  *
  */
-@Path("/base")
+@Path("/base/{root}/{child}")
 public class BaseQuery {
 	private static final Logger logger = Logger.getLogger(BaseQuery.class);
 
@@ -64,7 +69,6 @@ public class BaseQuery {
 	 *  
 	 * @param req 
 	 * @param uriInfo 
-	 * @param strServiceID
 	 * @param strResultType
 	 * @return
 	 */
@@ -73,94 +77,128 @@ public class BaseQuery {
 	public Response service(
 					@Context HttpServletRequest req,
 					@Context UriInfo uriInfo,
-					@QueryParam("serviceID") String strServiceID,
 					@DefaultValue("JSON") @QueryParam("resultType") String strResultType
 	) {
 		
-		String strUriQuery = uriInfo.getRequestUri().getQuery();
-		if(logger.isDebugEnabled()) logger.debug("[serviceID]\t" + strServiceID);
+		// setting api dto
+		APIServiceDTO apiServiceDto = new APIServiceDTO();
+		apiServiceDto.setUserReturnType(strResultType);
+		apiServiceDto.setRequestIP(req.getRemoteAddr());
 		
-		if("".equals(strServiceID)) {
-			return Response.status(404).entity("service id not found. check your request.").build();
-		} else {
-			try {		
-				String strResult =  requestQuery(req.getRemoteAddr(), strServiceID, strUriQuery, strResultType);
-				
-				if(QueryUtils.RESULT_TYPE.HTML_TABLE.name().equalsIgnoreCase(strResultType)) {
-					return Response.status(200)
-							.entity(strResult)
-							.header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML + "; charset=UTF-8")
-							.build();
-				} else {
-					return Response.status(200)
-							.entity(strResult)
-							.header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN + "; charset=UTF-8")
-							.build();
-				}
-			} catch (Exception e) {
-				logger.error("service call exception : service id : " + strServiceID, e);
-				return Response.status(400).entity("Service is error.").build();
+		apiServiceDto.setRequestURL(req.getRequestURL().toString());
+		apiServiceDto.setRequestParameter(uriInfo.getRequestUri().getQuery());
+		apiServiceDto.setAccessKey(req.getHeader("TDB_ACCESS_KEY"));
+		apiServiceDto.setSecretKey(req.getHeader("TDB_SECRET_KEY"));
+		apiServiceDto.setRequestUserDomainURL(StringUtils.substringAfter(apiServiceDto.getRequestURL(), "/base"));
+		if(logger.isDebugEnabled()) logger.debug("[ARI Service DTO]" + apiServiceDto);
+		
+		// check your credential
+		try {
+			long sTimeM = System.currentTimeMillis();
+			apiServiceDto.setUserSEQ(UserCredentialManager.getCredential(apiServiceDto));
+			if(logger.isDebugEnabled()) logger.debug("Login time is " + (System.currentTimeMillis() - sTimeM));
+		} catch (Exception e) {
+			logger.error("Check your credential." + apiServiceDto, e);
+			return Response.status(401)
+					.entity(e.getMessage())
+					.build();
+		}
+			
+		try {		
+			// request query
+			String strResult = requestQuery(apiServiceDto);
+			String strMediaType = MediaType.TEXT_PLAIN;
+			
+			// return to result 
+			if(QueryUtils.RESULT_TYPE.HTML_TABLE.name().equalsIgnoreCase(apiServiceDto.getUserReturnType())) {
+				strMediaType = MediaType.TEXT_HTML;
+			} else if(QueryUtils.RESULT_TYPE.XML.name().equalsIgnoreCase(apiServiceDto.getUserReturnType())) {
+				strMediaType = MediaType.TEXT_XML;
 			}
+			
+			return Response.status(200)
+					.entity(strResult)
+					.header(HttpHeaders.CONTENT_TYPE, strMediaType + "; charset=UTF-8")
+					.build();
+		} catch (Exception e) {
+			logger.error("Requset service error.", e);
+			return returnSystemError("Requset service error.\n" + e.getMessage());
 		}
 	}
 	
 	/**
 	 * call service
 	 * 
-	 * @param strRemoteAddrr
-	 * @param strServiceID
-	 * @param strUriQuery
-	 * @param strResultType
+	 * @param apiServiceDto
 	 */
-	private String requestQuery(String strRemoteAddrr, String strServiceID, String strUriQuery, String strResultType) throws Exception {
-		
+	private String requestQuery(APIServiceDTO apiServiceDto) throws Exception {
 		final Timestamp timstampStart = new Timestamp(System.currentTimeMillis());
-		UserDBDAO userDB = null;
+		UserDBDAO userDB = new UserDBDAO();
 		
 		try {
-			UserDBResourceDAO userDBResourceDao = TadpoleSystem_UserDBResource.findAPIKey(strServiceID);
+			UserDBResourceDAO userDBResourceDao = TadpoleSystem_UserDBResource.findRESTURL(apiServiceDto.getUserSEQ(), apiServiceDto.getRequestUserDomainURL());
+
 			if(userDBResourceDao == null) {
-				throw new Exception("Service ID is " + strServiceID + " not found. Check service ID is ask your serverice provider.");
+				throw new Exception("Not found your request url. Check your Request URL.");
 			} else {
+				// setting dto to service key
+				apiServiceDto.setApiServiceKey(userDBResourceDao.getRestapi_key());
 				
+				// find sql
 				String strSQL = TadpoleSystem_UserDBResource.getResourceData(userDBResourceDao);
 				if(logger.isDebugEnabled()) logger.debug("===> resource info: " + userDBResourceDao.getName() + ", " + strSQL);
 				
 				// find db
 				userDB = TadpoleSystem_UserDBQuery.getUserDBInstance(userDBResourceDao.getDb_seq());
-				//
-				SQLNamedParameterUtil oracleNamedParamUtil = SQLNamedParameterUtil.getInstance();
-				String strJavaSQL = oracleNamedParamUtil.parse(strSQL);
-				
-				String strResult = "";
-				Map<Integer, String> mapIndex = oracleNamedParamUtil.getMapIndexToName();
-				if(!mapIndex.isEmpty()) {
-					List<Object> listParam = makeOracleListParameter(mapIndex, strUriQuery);
-					
-					strResult = getSelect(strResultType, userDB, strJavaSQL, listParam);
-				} else {
-					List<Object> listParam = makeJavaListParameter(strUriQuery);
-					
-					strResult = getSelect(strResultType, userDB, strSQL, listParam);
-				}
-//				
-//				List<Object> listParam = makeListParameter(strUriQuery);
-//				
-//				String strResult = getSelect(strResultType, userDB, strSQL, listParam);
-//				if(logger.isDebugEnabled()) logger.debug("\t===> result is " + strResult);
-				
+
+				// execute sql
+				long sTimeM = System.currentTimeMillis();
+				String strResult = executeSQL(strSQL, apiServiceDto, userDB);
+				if(logger.isDebugEnabled()) logger.debug("Execute time is " + (System.currentTimeMillis() - sTimeM));
+
 				// save called history
-				saveHistoryData(strRemoteAddrr, userDB, timstampStart, strServiceID, strUriQuery, PublicTadpoleDefine.SUCCESS_FAIL.S.name(), "");
+				saveHistoryData(userDB, timstampStart, apiServiceDto, PublicTadpoleDefine.SUCCESS_FAIL.S.name(), "");
 				
 				return strResult;
 			}
 			
 		} catch (Exception e) {
-			logger.error("find api", e);
-			saveHistoryData(strRemoteAddrr, userDB, timstampStart, strServiceID, strUriQuery, PublicTadpoleDefine.SUCCESS_FAIL.F.name(), e.getMessage());
+			logger.error("requestQuery", e);
+			saveHistoryData(userDB, timstampStart, apiServiceDto, PublicTadpoleDefine.SUCCESS_FAIL.F.name(), e.getMessage());
 			throw e;
 		}
-		
+	}
+	
+	/**
+	 * execute sql
+	 * 
+	 * @param strSQL
+	 * @param apiServiceDto
+	 * @param userDB
+	 * @return
+	 * @throws Exception
+	 */
+	private String executeSQL(String strSQL, APIServiceDTO apiServiceDto, UserDBDAO userDB) throws Exception {
+		try {
+			String strLastSQL = strSQL;
+			
+			// parse request parameter
+			SQLNamedParameterUtil oracleNamedParamUtil = SQLNamedParameterUtil.getInstance();
+			String strJavaSQL = oracleNamedParamUtil.parse(strSQL);
+			
+			Map<Integer, String> mapIndex = oracleNamedParamUtil.getMapIndexToName();
+			List<Object> listParam = new ArrayList<>();
+			if(!mapIndex.isEmpty()) {
+				strLastSQL = strJavaSQL;
+				listParam = makeOracleListParameter(mapIndex, apiServiceDto.getRequestParameter());
+			} else {
+				listParam = makeJavaListParameter(apiServiceDto.getRequestParameter());
+			}
+			
+			return getSelect(apiServiceDto.getUserReturnType(), userDB, strLastSQL, listParam);
+		} catch(Exception e) {
+			throw new Exception(String.format("Check your query.\n [SQL] %s\n[Parameter]%s", strSQL, apiServiceDto.getRequestParameter()));
+		}
 	}
 	
 	/**
@@ -168,21 +206,20 @@ public class BaseQuery {
 	 * 
 	 * @param userDB
 	 * @param timstampStart
-	 * @param strApiname
-	 * @param strApiArgument
+	 * @param apiServiceDto
 	 * @param strResult
 	 * @param strErrorMsg
 	 */
-	private void saveHistoryData(String strRemoteAddrr, final UserDBDAO userDB, Timestamp timstampStart, String strApiname, String strApiArgument, String strResult, String strErrorMsg) {
+	private void saveHistoryData(final UserDBDAO userDB, Timestamp timstampStart, APIServiceDTO apiServiceDto, String strResult, String strErrorMsg) {
 		SQLHistoryDAO sqlHistoryDAO = new SQLHistoryDAO();
 		sqlHistoryDAO.setDbSeq(userDB.getSeq());
 		sqlHistoryDAO.setStartDateExecute(timstampStart);
 		sqlHistoryDAO.setEndDateExecute(new Timestamp(System.currentTimeMillis()));
 		sqlHistoryDAO.setResult(strResult);
 		sqlHistoryDAO.setMesssage(strErrorMsg);
-		sqlHistoryDAO.setStrSQLText(strApiname + "&" + strApiArgument);
+		sqlHistoryDAO.setStrSQLText(apiServiceDto.getApiServiceKey() + "&" + apiServiceDto.getRequestParameter());
 		
-		sqlHistoryDAO.setIpAddress(strRemoteAddrr);
+		sqlHistoryDAO.setIpAddress(apiServiceDto.getRequestIP());
 		
 		try {
 			TadpoleSystem_ExecutedSQL.saveExecuteSQUeryResource(-1, 
@@ -254,7 +291,12 @@ public class BaseQuery {
 		
 		for(int i=1; i<=mapIndex.size(); i++ ) {
 			String strKey = mapIndex.get(i);
-			listParam.add( params.get(strKey) );
+			
+			if(!params.containsKey(strKey)) {
+				throw new Exception("SQL Parameter not found. key name is " + strKey);
+			} else {
+				listParam.add( params.get(strKey) );
+			}
 		}
 		return listParam;
 	}
@@ -299,4 +341,21 @@ public class BaseQuery {
 		return listParam;
 	}
 
+
+	/**
+	 * Return Error Service.
+	 * 
+	 * Case
+	 * 	1. Do not connect Engine DB.
+	 *  2. Do not connect System DB.
+	 * 
+	 * @param strMsg
+	 * @return
+	 */
+	private Response returnSystemError(String strMsg) {
+		return Response.status(500)
+				.entity(strMsg)
+				.build();
+	}
+	
 }
