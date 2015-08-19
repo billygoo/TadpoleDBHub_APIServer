@@ -51,7 +51,7 @@ import com.hangum.tadpole.engine.sql.util.SQLUtil;
  * Tadpole API Server BASE
  * 
  * <PRE>
- * chrome-extension://hgmloofddffdnphfgcellkdfbfbjeloo/RestClient.html#RequestPlace:default
+ * Client test tool : chrome-extension://hgmloofddffdnphfgcellkdfbfbjeloo/RestClient.html#RequestPlace:default
  * 
  * example url : 
  * 		http://localhost:8080/com.hangum.tadpole.api.server/rest/base/dblist/mysql?user_seq=1&resultType=JSON
@@ -103,9 +103,9 @@ public class BaseQuery {
 					.entity(e.getMessage())
 					.build();
 		}
-			
+
+		// execute sql
 		try {		
-			// return to result
 			String strMediaType = MediaType.TEXT_PLAIN;
 			if(QueryUtils.RESULT_TYPE.HTML_TABLE.name().equalsIgnoreCase(apiServiceDto.getUserReturnType())) {
 				strMediaType = MediaType.TEXT_HTML;

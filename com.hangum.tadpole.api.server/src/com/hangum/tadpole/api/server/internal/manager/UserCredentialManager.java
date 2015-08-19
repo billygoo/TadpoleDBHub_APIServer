@@ -39,7 +39,7 @@ public class UserCredentialManager {
 		try {
 			List<UserInfoDataDAO> listCredential = TadpoleSystem_UserInfoData.getUserCredential(apiServiceDto.getAccessKey(), apiServiceDto.getSecretKey());
 			if(!listCredential.isEmpty()) {
-				if(listCredential.size() == 1) throw new Exception("Authorization exception. Check your credential.");
+				if(listCredential.size() == 1) throw new Exception("Authorization exception. Check your access key and secret key.");
 				
 				// user_seq가 모두 맞아야 정상이다.
 				for (UserInfoDataDAO userInfoDataDAO : listCredential) {
@@ -47,12 +47,12 @@ public class UserCredentialManager {
 						intUserSEQ = userInfoDataDAO.getUser_seq();
 					} else {
 						if(intUserSEQ != userInfoDataDAO.getUser_seq()) {
-							throw new Exception("Authorization exception. Check your credential.");
+							throw new Exception("Authorization exception. Check your access key and secret key.");
 						}
 					}
 				}
 			} else {
-				throw new Exception("Not found user credential. Check your reqeust Header.");
+				throw new Exception("Not found user credential. Check your access key and secret key.");
 			}
 			
 		} catch (Exception e) {
