@@ -1,14 +1,4 @@
-/*******************************************************************************
- * Copyright (c) 2015 hangum.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser Public License v2.1
- * which accompanies this distribution, and is available at
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- * 
- * Contributors:
- *     hangum - initial API and implementation
- ******************************************************************************/
-package com.hangum.tadpole.api.server;
+package com.hangum.tadpole.api.server.request;
 
 import java.net.URLDecoder;
 import java.sql.Timestamp;
@@ -20,7 +10,6 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
-import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -48,7 +37,7 @@ import com.hangum.tadpole.engine.sql.util.SQLNamedParameterUtil;
 import com.hangum.tadpole.engine.sql.util.SQLUtil;
 
 /**
- * Tadpole API Server BASE
+ *  Tadpole API Server BASE
  * 
  * <PRE>
  * Client test tool : 
@@ -61,10 +50,9 @@ import com.hangum.tadpole.engine.sql.util.SQLUtil;
  * @author hangum
  *
  */
-@Path("/base/{root}/{child}")
 public class BaseQuery {
 	private static final Logger logger = Logger.getLogger(BaseQuery.class);
-
+	
 	/**
 	 * service gate 
 	 *  
@@ -122,6 +110,7 @@ public class BaseQuery {
 			logger.error("Requset service error.", e);
 			return returnSystemError("Requset service error.\n" + e.getMessage());
 		}
+		
 	}
 	
 	/**
@@ -129,7 +118,7 @@ public class BaseQuery {
 	 * 
 	 * @param apiServiceDto
 	 */
-	private String requestQuery(APIServiceDTO apiServiceDto) throws Exception {
+	protected String requestQuery(APIServiceDTO apiServiceDto) throws Exception {
 		final Timestamp timstampStart = new Timestamp(System.currentTimeMillis());
 		UserDBDAO userDB = new UserDBDAO();
 		
@@ -360,10 +349,10 @@ public class BaseQuery {
 	 * @param strMsg
 	 * @return
 	 */
-	private Response returnSystemError(String strMsg) {
+	protected Response returnSystemError(String strMsg) {
 		return Response.status(500)
 				.entity(strMsg)
 				.build();
 	}
-	
+
 }
