@@ -51,7 +51,8 @@ import com.hangum.tadpole.engine.sql.util.SQLUtil;
  * Tadpole API Server BASE
  * 
  * <PRE>
- * Client test tool : chrome-extension://hgmloofddffdnphfgcellkdfbfbjeloo/RestClient.html#RequestPlace:default
+ * Client test tool : 
+ * 		chrome-extension://hgmloofddffdnphfgcellkdfbfbjeloo/RestClient.html#RequestPlace:default
  * 
  * example url : 
  * 		http://localhost:8080/com.hangum.tadpole.api.server/rest/base/dblist/mysql?user_seq=1&resultType=JSON
