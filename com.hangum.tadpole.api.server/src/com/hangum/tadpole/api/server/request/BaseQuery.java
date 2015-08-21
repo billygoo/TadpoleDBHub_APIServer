@@ -32,8 +32,8 @@ import com.hangum.tadpole.engine.query.dao.system.UserDBResourceDAO;
 import com.hangum.tadpole.engine.query.sql.TadpoleSystem_ExecutedSQL;
 import com.hangum.tadpole.engine.query.sql.TadpoleSystem_UserDBQuery;
 import com.hangum.tadpole.engine.query.sql.TadpoleSystem_UserDBResource;
+import com.hangum.tadpole.engine.sql.paremeter.SQLNamedParameterUtil;
 import com.hangum.tadpole.engine.sql.util.QueryUtils;
-import com.hangum.tadpole.engine.sql.util.SQLNamedParameterUtil;
 import com.hangum.tadpole.engine.sql.util.SQLUtil;
 
 /**
@@ -194,7 +194,7 @@ public class BaseQuery {
 			
 			return getSelect(apiServiceDto.getUserReturnType(), userDB, strLastSQL, listParam);
 		} catch(Exception e) {
-			throw new Exception(String.format("Check your query.\n [SQL] %s\n[Parameter]%s", strSQL, apiServiceDto.getRequestParameter()));
+			throw new Exception(String.format("Rise System exception.\n [ERROR]%s\n [SQL] %s\n [Parameter]%s", e.getMessage(), strSQL, apiServiceDto.getRequestParameter()));
 		}
 	}
 	
