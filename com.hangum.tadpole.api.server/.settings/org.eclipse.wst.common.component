@@ -2,6 +2,30 @@
     <wb-module deploy-name="com.hangum.tadpole.api.server">
         <wb-resource deploy-path="/" source-path="/WebContent" tag="defaultRootSource"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
+        <dependent-module archiveName="com.hangum.tadpole.commons.libs.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/com.hangum.tadpole.commons.libs/com.hangum.tadpole.commons.libs">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
+        <dependent-module archiveName="com.hangum.tadpole.cipher.core.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/com.hangum.tadpole.cipher.core/com.hangum.tadpole.cipher.core">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
+        <dependent-module archiveName="com.hangum.tadpole.commons.utils.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/com.hangum.tadpole.commons.utils/com.hangum.tadpole.commons.utils">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
+        <dependent-module archiveName="com.hangum.tadpole.engine.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/com.hangum.tadpole.engine/com.hangum.tadpole.engine">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
+        <dependent-module archiveName="com.hangum.tadpole.commons.libs.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/com.hangum.tadpole.commons.libs/com.hangum.tadpole.commons.libs">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
+        <dependent-module archiveName="com.hangum.tadpole.cipher.core.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/com.hangum.tadpole.cipher.core/com.hangum.tadpole.cipher.core">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
+        <dependent-module archiveName="com.hangum.tadpole.commons.utils.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/com.hangum.tadpole.commons.utils/com.hangum.tadpole.commons.utils">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
+        <dependent-module archiveName="com.hangum.tadpole.engine.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/com.hangum.tadpole.engine/com.hangum.tadpole.engine">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
         <property name="context-root" value="com.hangum.tadpole.api.server"/>
         <property name="java-output-path" value="/com.hangum.tadpole.api.server/build/classes"/>
     </wb-module>

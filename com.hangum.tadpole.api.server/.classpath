@@ -13,5 +13,9 @@
 			<attribute name="owner.project.facets" value="java"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry combineaccessrules="false" kind="src" path="/com.hangum.tadpole.cipher.core"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/com.hangum.tadpole.commons.libs"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/com.hangum.tadpole.commons.utils"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/com.hangum.tadpole.engine"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

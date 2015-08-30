@@ -3,6 +3,10 @@
 	<name>com.hangum.tadpole.api.server</name>
 	<comment></comment>
 	<projects>
+		<project>com.hangum.tadpole.cipher.core</project>
+		<project>com.hangum.tadpole.commons.libs</project>
+		<project>com.hangum.tadpole.commons.utils</project>
+		<project>com.hangum.tadpole.engine</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
