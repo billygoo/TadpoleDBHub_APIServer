@@ -20,5 +20,4 @@ import javax.ws.rs.Path;
  */
 @Path("/base/{first}/{second}")
 public class SecondBaseQuery extends BaseQuery {
-	
 }
