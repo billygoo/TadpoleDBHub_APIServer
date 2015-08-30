@@ -4,13 +4,10 @@
 
 API Server 사용법
 -
-* 계속 써가야 .. 
+*  https://tadpoledbhub.atlassian.net/wiki/pages/viewpage.action?pageId=21528932
 
-사용예시
--
-올챙이 이벤트를 참고하세요.
-* https://tadpoledbhub.atlassian.net/wiki/pages/viewpage.action?pageId=18743302 
-* https://tadpoledbhub.atlassian.net/wiki/pages/viewpage.action?pageId=19496984
+Movie
+*  https://www.youtube.com/watch?v=NVLcx3G3rJ4
 
 License
 -
