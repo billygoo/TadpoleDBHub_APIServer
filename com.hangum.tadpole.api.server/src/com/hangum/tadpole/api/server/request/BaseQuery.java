@@ -61,7 +61,11 @@ import com.hangum.tadpole.engine.sql.util.SQLUtil;
  * 		chrome-extension://hgmloofddffdnphfgcellkdfbfbjeloo/RestClient.html#RequestPlace:default
  * 
  * example url : 
- * 		http://localhost:8080/tadpoleapi/rest/base/dblist/mysql?user_seq=1&resultType=JSON
+ * 		http://127.0.0.1:8080/tadpoleapi/rest/base/test/ifelse?type_code=test&seq=2
+ * 
+ * Header
+ * 		TDB_ACCESS_KEY: 6dc963f7-b501-42b0-9dd7-298c9504cf98
+ *		TDB_SECRET_KEY: e20ea028-fcf9-4f9c-894a-7f38ac0f6e59
  * </PRE>
  * 
  * @author hangum
@@ -137,15 +141,15 @@ public class BaseQuery {
 			ErrorMessageManager retDao 
 				= new ErrorMessageManager(DefineCode.InternalServerError 
 						,DefineCode.STR_URL_PARSE_EXCEPTION 
-						,String.format("URL parse exception. Please URL pasrse exception. %s", e.getMessage())
+						,String.format("URL parse exception. Please, check the URL. %s", e.getMessage())
 				);
 			return retDao.getResponse();
 		} catch (TadpoleSQLManagerException e) {
 			logger.error("Connection problem engine db.", e);
 			ErrorMessageManager retDao = new ErrorMessageManager(DefineCode.InternalServerError 
 					,DefineCode.STR_ENGINDB_EXCEPTION  
-					,String.format("Connection problem engine db. %s", e.getMessage())
-					,String.format("Connection problem engine db. %s", e.getMessage())
+					,String.format("Connection problem Tadpole engine. %s", e.getMessage())
+					,String.format("If shutdown engine or shutdown engind db?\n OR Engine hang status? %s", e.getMessage())
 				);
 			return retDao.getResponse();
 		} catch (SQLException e) {
