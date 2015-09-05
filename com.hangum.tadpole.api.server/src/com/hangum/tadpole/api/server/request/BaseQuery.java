@@ -247,13 +247,12 @@ public class BaseQuery {
 		// 분리자 만큼 실행한다.
 		for (String strSQL : strSQLs.split(PublicTadpoleDefine.SQL_DELIMITER)) {
 			// execute sql
-			long sTimeM = System.currentTimeMillis();
+
 			if(QueryUtils.RESULT_TYPE.JSON.name().equalsIgnoreCase(apiServiceDto.getUserReturnType())) {
 				strReturnResult += executeSQL(strSQL, apiServiceDto, userDB) + ",";
 			} else {
 				strReturnResult += executeSQL(strSQL, apiServiceDto, userDB);
 			}
-			if(logger.isDebugEnabled()) logger.debug("Execute time is " + (System.currentTimeMillis() - sTimeM));
 		}
 		
 		if(QueryUtils.RESULT_TYPE.JSON.name().equalsIgnoreCase(apiServiceDto.getUserReturnType())) {
