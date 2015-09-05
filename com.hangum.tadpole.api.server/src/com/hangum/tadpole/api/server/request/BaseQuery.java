@@ -92,7 +92,7 @@ public class BaseQuery {
 		// setting api dto
 		APIServiceDTO apiDto = initAPIDAO(strResultType, req, uriInfo);
 		
-		// check your credential
+		// check user credential
 		try {
 			long sTimeM = System.currentTimeMillis();
 			apiDto.setUserSEQ(UserCredentialManager.getCredential(apiDto));
@@ -104,7 +104,7 @@ public class BaseQuery {
 			return retDao.getResponse();
 		}
 		
-		// find url
+		// Check find url
 		UserDBResourceDAO userDBResourceDao = null;
 		try {
 			userDBResourceDao = TadpoleSystem_UserDBResource.findRESTURL(apiDto.getUserSEQ(), apiDto.getRequestUserDomainURL());
