@@ -1,5 +1,7 @@
 package com.hangum.tadpole.api.server.internal.manager;
 
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.google.gson.Gson;
@@ -7,13 +9,13 @@ import com.hangum.tadpole.api.server.dao.ErrorMessageResponseDTO;
 
 public class ErrorMessageManager extends ErrorMessageResponseDTO {
 	
-	public ErrorMessageManager(String status, int code, String message) {
+	public ErrorMessageManager(int status, String code, String message) {
 		this.status = status;
 		this.code = code;
 		this.message = message;
 	}
 	
-	public ErrorMessageManager(String status, int code, String message, String devMessage) {
+	public ErrorMessageManager(int status, String code, String message, String devMessage) {
 		this.status = status;
 		this.code = code;
 		this.message = message;
@@ -26,8 +28,9 @@ public class ErrorMessageManager extends ErrorMessageResponseDTO {
 	}
 	
 	public Response getResponse() {
-		return Response.status(getCode())
+		return Response.status(getStatus())
 			.entity(msgToJsonString())
+			.header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN + "; charset=UTF-8")
 			.build();
 	}
 

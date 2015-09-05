@@ -8,33 +8,34 @@ package com.hangum.tadpole.api.server.dao;
  */
 public class ErrorMessageResponseDTO {
 
-	protected String status = "";
-	protected int code;
+	protected int status;
+	protected String code = "";
 	protected String message = "";
 	protected String devMessage = "";
 	
 	public ErrorMessageResponseDTO() {
 	}
 
-	public ErrorMessageResponseDTO(String status, int code, String message) {
+	public ErrorMessageResponseDTO(int status, String code, String message) {
 		this.status = status;
 		this.code = code;
 		this.message = message;
 	}
 
-	public String getStatus() {
+
+	public int getStatus() {
 		return status;
 	}
 
-	public void setStatus(String status) {
+	public void setStatus(int status) {
 		this.status = status;
 	}
 
-	public int getCode() {
+	public String getCode() {
 		return code;
 	}
 
-	public void setCode(int code) {
+	public void setCode(String code) {
 		this.code = code;
 	}
 

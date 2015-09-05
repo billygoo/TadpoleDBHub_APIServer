@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 
 import com.google.gson.JsonArray;
 import com.hangum.tadpole.api.server.dao.APIServiceDTO;
+import com.hangum.tadpole.api.server.define.DefineCode;
 import com.hangum.tadpole.api.server.internal.manager.ErrorMessageManager;
 import com.hangum.tadpole.api.server.internal.manager.UserCredentialManager;
 import com.hangum.tadpole.commons.dialogs.message.dao.SQLHistoryDAO;
@@ -41,6 +42,7 @@ import com.hangum.tadpole.engine.query.dao.system.UserDBResourceDAO;
 import com.hangum.tadpole.engine.query.sql.TadpoleSystem_ExecutedSQL;
 import com.hangum.tadpole.engine.query.sql.TadpoleSystem_UserDBQuery;
 import com.hangum.tadpole.engine.query.sql.TadpoleSystem_UserDBResource;
+import com.hangum.tadpole.engine.restful.RESTFULUnsupportedEncodingException;
 import com.hangum.tadpole.engine.restful.RESTFulArgumentNotMatchException;
 import com.hangum.tadpole.engine.restful.RESTFulNotFoundURLException;
 import com.hangum.tadpole.engine.restful.RESTFulSQLExecuteException;
@@ -84,16 +86,7 @@ public class BaseQuery {
 					@DefaultValue("JSON") @QueryParam("resultType") String strResultType
 	) {
 		// setting api dto
-		APIServiceDTO apiDto = new APIServiceDTO();
-		apiDto.setUserReturnType(strResultType);
-		apiDto.setRequestIP(req.getRemoteAddr());
-		
-		apiDto.setRequestURL(req.getRequestURL().toString());
-		apiDto.setRequestParameter(uriInfo.getRequestUri().getQuery());
-		apiDto.setAccessKey(req.getHeader("TDB_ACCESS_KEY"));
-		apiDto.setSecretKey(req.getHeader("TDB_SECRET_KEY"));
-		apiDto.setRequestUserDomainURL(StringUtils.substringAfter(apiDto.getRequestURL(), "/base"));
-		if(logger.isDebugEnabled()) logger.debug("[ARI Service DTO]" + apiDto);
+		APIServiceDTO apiDto = initAPIDAO(strResultType, req, uriInfo);
 		
 		// check your credential
 		try {
@@ -103,7 +96,7 @@ public class BaseQuery {
 		} catch (Exception e) {
 			logger.error("Check your credential." + apiDto, e);
 			
-			ErrorMessageManager retDao = new ErrorMessageManager("401", 401, e.getMessage());
+			ErrorMessageManager retDao = new ErrorMessageManager(DefineCode.Unauthorized, DefineCode.STR_Unauthorized, e.getMessage());
 			return retDao.getResponse();
 		}
 		
@@ -112,14 +105,15 @@ public class BaseQuery {
 		try {
 			userDBResourceDao = TadpoleSystem_UserDBResource.findRESTURL(apiDto.getUserSEQ(), apiDto.getRequestUserDomainURL());
 		} catch(RESTFulNotFoundURLException notFoundException) {
-			ErrorMessageManager retDao = new ErrorMessageManager("404", 500 
+			ErrorMessageManager retDao = new ErrorMessageManager(DefineCode.NotFound, DefineCode.STR_NotFound 
 						,String.format("Not found your request url. Check your Request URL. URL is %s", apiDto.getRequestUserDomainURL())
 					);
 			return retDao.getResponse();
 		} catch (Exception e) {
 			logger.error("Check your API Server.\n\t", e);
 			
-			ErrorMessageManager retDao = new ErrorMessageManager("500", 500 
+			ErrorMessageManager retDao = new ErrorMessageManager(
+						DefineCode.InternalServerError, DefineCode.STR_ENGINDB_EXCEPTION 
 						,String.format("Check your API Server. %s", e.getMessage())
 					);
 			return retDao.getResponse();
@@ -134,58 +128,81 @@ public class BaseQuery {
 				strMediaType = MediaType.TEXT_XML;
 			}
 			
-			return Response.status(200)
+			return Response.status(DefineCode.OK)
 					.entity(requestQuery(userDBResourceDao, apiDto))
 					.header(HttpHeaders.CONTENT_TYPE, strMediaType + "; charset=UTF-8")
 					.build();
-		} catch (UnsupportedEncodingException e) {
+		} catch (RESTFULUnsupportedEncodingException e) {
 			logger.error("URL parse exception.", e);
-			ErrorMessageManager retDao = new ErrorMessageManager("500", 500 
-					,String.format("URL parse exception. Please URL pasrse exception. %s", e.getMessage())
-				);
-			return retDao.getResponse();
-		} catch (RESTFulNotFoundURLException e) {
-			logger.error("Not found restful url exception.", e);
-			ErrorMessageManager retDao = new ErrorMessageManager("500", 500 
-					,String.format("Not found restful url exception.. %s", e.getMessage())
+			ErrorMessageManager retDao 
+				= new ErrorMessageManager(DefineCode.InternalServerError 
+						,DefineCode.STR_URL_PARSE_EXCEPTION 
+						,String.format("URL parse exception. Please URL pasrse exception. %s", e.getMessage())
 				);
 			return retDao.getResponse();
 		} catch (TadpoleSQLManagerException e) {
 			logger.error("Connection problem engine db.", e);
-			ErrorMessageManager retDao = new ErrorMessageManager("500", 500 
+			ErrorMessageManager retDao = new ErrorMessageManager(DefineCode.InternalServerError 
+					,DefineCode.STR_ENGINDB_EXCEPTION  
 					,String.format("Connection problem engine db. %s", e.getMessage())
 					,String.format("Connection problem engine db. %s", e.getMessage())
 				);
 			return retDao.getResponse();
 		} catch (SQLException e) {
 			logger.error("Connection problem engine db.", e);
-			ErrorMessageManager retDao = new ErrorMessageManager("500", 500 
+			ErrorMessageManager retDao = new ErrorMessageManager(DefineCode.InternalServerError 
+					,DefineCode.STR_ENGINDB_SQL_EXCEPTIONO   
 					,String.format("Connection problem engine db. %s", e.getMessage())
 					,String.format("Connection problem engine db. %s", e.getMessage())
 				);
 			return retDao.getResponse();
 		} catch (SQLTemplateException e) {
 			logger.error("Check user sql template.", e);
-			ErrorMessageManager retDao = new ErrorMessageManager("500", 500 
+			ErrorMessageManager retDao = new ErrorMessageManager(DefineCode.InternalServerError 
+					,DefineCode.STR_TEMPLATE_EXCEPTION    
 					,String.format("Check user sql template. %s", e.getMessage())
 					,String.format("Check user sql template. %s", e.getMessage())
 				);
 			return retDao.getResponse();
 		} catch (RESTFulArgumentNotMatchException e) {
 			logger.error("Check user sql argument.", e);
-			ErrorMessageManager retDao = new ErrorMessageManager("500", 500 
+			ErrorMessageManager retDao = new ErrorMessageManager(DefineCode.InternalServerError 
+					,DefineCode.STR_ARGUMENT_NOT_MATCH_EXCEPTION  
 					,String.format("Check user sql argument. %s", e.getMessage())
 					,String.format("Check user sql argument. %s", e.getMessage())
 				);
 			return retDao.getResponse();
 		} catch (RESTFulSQLExecuteException e) {
 			logger.error("Check user sql.", e);
-			ErrorMessageManager retDao = new ErrorMessageManager("500", 500 
+			ErrorMessageManager retDao = new ErrorMessageManager(DefineCode.InternalServerError 
+					,DefineCode.STR_RESTFUL_SQL_EXCEPTION 
 					,String.format("Check user sql. %s", e.getMessage())
 					,String.format("Check user sql. %s", e.getMessage())
 				);
 			return retDao.getResponse();
 		}
+	}
+	
+	/**
+	 * initialize API DAO
+	 * @param strResultType
+	 * @param req
+	 * @param uriInfo
+	 * @return
+	 */
+	private APIServiceDTO initAPIDAO(String strResultType, HttpServletRequest req, UriInfo uriInfo) {
+		APIServiceDTO apiDto = new APIServiceDTO();
+		apiDto.setUserReturnType(strResultType);
+		apiDto.setRequestIP(req.getRemoteAddr());
+		
+		apiDto.setRequestURL(req.getRequestURL().toString());
+		apiDto.setRequestParameter(uriInfo.getRequestUri().getQuery());
+		apiDto.setAccessKey(req.getHeader("TDB_ACCESS_KEY"));
+		apiDto.setSecretKey(req.getHeader("TDB_SECRET_KEY"));
+		apiDto.setRequestUserDomainURL(StringUtils.substringAfter(apiDto.getRequestURL(), "/base"));
+		if(logger.isDebugEnabled()) logger.debug("[ARI Service DTO]" + apiDto);
+		
+		return apiDto;
 	}
 	
 	/**
@@ -202,7 +219,7 @@ public class BaseQuery {
 	 * @throws RESTFulArgumentNotMatchException 
 	 * @throws UnsupportedEncodingException 
 	 */
-	protected String requestQuery(UserDBResourceDAO userDBResourceDao, APIServiceDTO apiServiceDto) throws RESTFulNotFoundURLException, TadpoleSQLManagerException, SQLException, SQLTemplateException, UnsupportedEncodingException, RESTFulArgumentNotMatchException, RESTFulSQLExecuteException {
+	protected String requestQuery(UserDBResourceDAO userDBResourceDao, APIServiceDTO apiServiceDto) throws TadpoleSQLManagerException, SQLException, SQLTemplateException, RESTFULUnsupportedEncodingException, RESTFulArgumentNotMatchException, RESTFulSQLExecuteException {
 		final Timestamp timstampStart = new Timestamp(System.currentTimeMillis());
 		UserDBDAO userDB = new UserDBDAO();
 	
@@ -257,7 +274,7 @@ public class BaseQuery {
 	 * @throws RESTFulSQLExecuteException 
 	 * @throws Exception
 	 */
-	private String executeSQL(String strSQL, APIServiceDTO apiServiceDto, UserDBDAO userDB) throws UnsupportedEncodingException, RESTFulArgumentNotMatchException, RESTFulSQLExecuteException  {
+	private String executeSQL(String strSQL, APIServiceDTO apiServiceDto, UserDBDAO userDB) throws RESTFULUnsupportedEncodingException, RESTFulArgumentNotMatchException, RESTFulSQLExecuteException  {
 		NamedParameterDAO dao = NamedParameterUtil.parseParameterUtils(strSQL, apiServiceDto.getRequestParameter());
 		return getSelect(apiServiceDto, userDB, dao);
 	}
