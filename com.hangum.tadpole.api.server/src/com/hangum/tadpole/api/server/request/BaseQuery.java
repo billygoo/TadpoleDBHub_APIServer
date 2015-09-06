@@ -221,9 +221,9 @@ public class BaseQuery {
 	 * @throws SQLTemplateException 
 	 * @throws RESTFulSQLExecuteException 
 	 * @throws RESTFulArgumentNotMatchException 
-	 * @throws UnsupportedEncodingException 
 	 */
-	protected String requestQuery(UserDBResourceDAO userDBResourceDao, APIServiceDTO apiServiceDto) throws TadpoleSQLManagerException, SQLException, SQLTemplateException, RESTFULUnsupportedEncodingException, RESTFulArgumentNotMatchException, RESTFulSQLExecuteException {
+	protected String requestQuery(UserDBResourceDAO userDBResourceDao, APIServiceDTO apiServiceDto) 
+			throws TadpoleSQLManagerException, SQLException, SQLTemplateException, RESTFULUnsupportedEncodingException, RESTFulArgumentNotMatchException, RESTFulSQLExecuteException {
 		final Timestamp timstampStart = new Timestamp(System.currentTimeMillis());
 		UserDBDAO userDB = new UserDBDAO();
 	
@@ -275,9 +275,10 @@ public class BaseQuery {
 	 * @throws RESTFulArgumentNotMatchException 
 	 * @throws UnsupportedEncodingException 
 	 * @throws RESTFulSQLExecuteException 
-	 * @throws Exception
 	 */
-	private String executeSQL(String strSQL, APIServiceDTO apiServiceDto, UserDBDAO userDB) throws RESTFULUnsupportedEncodingException, RESTFulArgumentNotMatchException, RESTFulSQLExecuteException  {
+	private String executeSQL(String strSQL, APIServiceDTO apiServiceDto, UserDBDAO userDB) 
+						throws RESTFULUnsupportedEncodingException, RESTFulArgumentNotMatchException, RESTFulSQLExecuteException  {
+		
 		NamedParameterDAO dao = NamedParameterUtil.parseParameterUtils(strSQL, apiServiceDto.getRequestParameter());
 		return getSelect(apiServiceDto, userDB, dao);
 	}
